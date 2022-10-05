@@ -1,0 +1,24 @@
+{
+  "name": "revolt-leaguebot",
+  "version": "0.1.0",
+  "description": "Simple revolt bot to organize competitive matches for the game Ninja.io",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "tsc && node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnnaBanana2577/revolt-leaguebot.git"
+  },
+  "keywords": [],
+  "author": "Anna",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AnnaBanana2577/revolt-leaguebot/issues"
+  },
+  "homepage": "https://github.com/AnnaBanana2577/revolt-leaguebot#readme",
+  "dependencies": {
+    "@types/node": "^18.8.2",
+    "revolt.js": "^6.0.18"
+  }
+}
