@@ -10,7 +10,7 @@ interface BotClientOptions {
 interface Command {
   name: string;
   description: string;
-  run: (message: Message) => void;
+  run: (message: Message) => any;
 }
 
 export class BotClient extends Client {
@@ -23,21 +23,22 @@ export class BotClient extends Client {
   constructor(options: BotClientOptions) {
     super();
     this.botToken = options.botToken;
-    this.commandsDirectory = options.commandsDirectory;
+    this.commandsDirectory = process.cwd() + options.commandsDirectory;
     this.prefix = options.prefix;
 
-    this.once("ready", () => {
-      console.log(`Logged in as ${this.user?.username}`);
+    this.once("ready", async () => {
+      if (!this.user) return;
+      console.log(`Logged in as ${this.user.username}`);
 
-      //Set presence
-      if (!this.user?.status) return;
-      this.user.status.presence = "Online";
-      this.user.status.text = "!help | Ninja.io Bot";
+      this.user.status = {
+        presence: "Online",
+        text: "!help | Compteting in Ninja.io",
+      };
 
       //Load commands
       if (!existsSync(this.commandsDirectory)) return;
       if (readdirSync(this.commandsDirectory).length == 0) return;
-      this.scanCommands(this.commandsDirectory);
+      await this.loadCommands(this.commandsDirectory);
     });
 
     this.on("message", this.handleCommand);
@@ -47,11 +48,18 @@ export class BotClient extends Client {
     this.loginBot(this.botToken);
   }
 
-  private handleCommand(message: Message) {
+  private async handleCommand(message: Message) {
     if (!message.content) return;
     const isACommand = this.parseMessage(message.content);
     if (!isACommand) return;
     const [command, args] = isACommand;
+
+    if (!this.commands.get(command)) return;
+
+    const cmd = this.commands.get(command); //cmd is Command object
+
+    //Do checks here for roles, args, etc
+    await cmd?.run(message).catch((err: any) => console.log(err));
   }
 
   private parseMessage(
@@ -72,16 +80,11 @@ export class BotClient extends Client {
     return [command, args];
   }
 
-  private async loadCommands() {
-    if (!existsSync(this.commandsDirectory)) return;
-    if (readdirSync(this.commandsDirectory).length == 0) return;
-  }
-
-  private async scanCommands(directory: string) {
+  private async loadCommands(directory: string) {
     const files = readdirSync(directory);
     for (const file of files) {
       const path = `${directory}/${file}`;
-      if (lstatSync(path).isDirectory()) await this.scanCommands(path);
+      if (lstatSync(path).isDirectory()) await this.loadCommands(path);
       if (!file.endsWith(".js")) continue;
       const module = await import(path);
       if (!module.default || !module.default.name) return;
